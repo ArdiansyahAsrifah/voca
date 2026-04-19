@@ -1,0 +1,93 @@
+@import "tailwindcss";
+
+@theme {
+  --color-primary: #0d9488;
+  --color-primary-dark: #0f766e;
+  --color-primary-light: #ccfbf1;
+  --color-warm: #f0fdfa;
+}
+
+* {
+  -webkit-tap-highlight-color: transparent;
+}
+
+body {
+  background: linear-gradient(135deg, #dff3ef 0%, #f0fdfa 25%, #e8faf6 50%, #f0f9ff 75%, #edf9f6 100%);
+  min-height: 100vh;
+  max-width: 430px;
+  margin: 0 auto;
+}
+
+/* Glassmorphism base classes */
+.glass {
+  background: rgba(255, 255, 255, 0.52);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+  border: 0.5px solid rgba(255, 255, 255, 0.78);
+}
+
+.glass-teal {
+  background: rgba(13, 148, 136, 0.07);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+  border: 0.5px solid rgba(13, 148, 136, 0.22);
+}
+
+.glass-sent {
+  background: rgba(13, 148, 136, 0.82);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+  border: 0.5px solid rgba(255, 255, 255, 0.3);
+}
+
+.glass-input {
+  background: rgba(255, 255, 255, 0.48);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  border: 0.5px solid rgba(255, 255, 255, 0.72);
+}
+
+.glass-btn {
+  background: rgba(255, 255, 255, 0.52);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  border: 0.5px solid rgba(255, 255, 255, 0.78);
+  transition: all 0.18s ease;
+}
+
+.glass-btn:active {
+  background: rgba(13, 148, 136, 0.1);
+  border-color: rgba(13, 148, 136, 0.38);
+}
+
+.glass-btn-active {
+  background: rgba(13, 148, 136, 0.1);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  border: 1.5px solid rgba(13, 148, 136, 0.45);
+}
+
+/* Mesh blob decorations (use inside relative containers) */
+.bg-blob-1 {
+  position: absolute;
+  width: 200px;
+  height: 200px;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(13, 148, 136, 0.12) 0%, transparent 70%);
+  top: -60px;
+  right: -60px;
+  pointer-events: none;
+  z-index: 0;
+}
+
+.bg-blob-2 {
+  position: absolute;
+  width: 160px;
+  height: 160px;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(20, 184, 166, 0.1) 0%, transparent 70%);
+  bottom: 80px;
+  left: -40px;
+  pointer-events: none;
+  z-index: 0;
+}
