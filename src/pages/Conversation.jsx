@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { generateSmartReplies, generateSmartRepliesWithImage, detectContextLabel } from '../services/ollama'
+import { generateSmartReplies, generateSmartRepliesWithImage, detectContextLabel } from '../services/gemma'
 import { createSpeechRecognition } from '../services/speechToText'
 
 export default function Conversation() {
