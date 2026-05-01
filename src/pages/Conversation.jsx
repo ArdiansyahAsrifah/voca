@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { generateSmartReplies, generateSmartRepliesWithImage, detectContextLabel } from '../services/gemma'
+import { generateSmartReplies } from '../services/gemma'
 import { createSpeechRecognition } from '../services/speechToText'
 
 export default function Conversation() {
@@ -14,15 +14,6 @@ export default function Conversation() {
   const [customInput, setCustomInput] = useState('')
   const [isSpeaking, setIsSpeaking] = useState(false)
 
-  // --- Camera state ---
-  const [cameraMode, setCameraMode] = useState(false)        // show camera UI
-  const [cameraStream, setCameraStream] = useState(null)
-  const [capturedImage, setCapturedImage] = useState(null)   // base64 data URL
-  const [isAnalyzing, setIsAnalyzing] = useState(false)
-  const [contextLabel, setContextLabel] = useState('')        // e.g. "Menu 🍜"
-
-  const videoRef = useRef(null)
-  const canvasRef = useRef(null)
   const recognitionRef = useRef(null)
   const isListeningRef = useRef(false)
   const shouldListenRef = useRef(true)
@@ -39,16 +30,8 @@ export default function Conversation() {
       shouldListenRef.current = false
       if (recognitionRef.current) recognitionRef.current.stop()
       window.speechSynthesis.cancel()
-      stopCamera()
     }
   }, [])
-
-  // Attach stream to video element when cameraMode opens
-  useEffect(() => {
-    if (cameraMode && cameraStream && videoRef.current) {
-      videoRef.current.srcObject = cameraStream
-    }
-  }, [cameraMode, cameraStream])
 
   // ─── Speech ───────────────────────────────────────────────────────────
   const startListening = () => {
@@ -87,16 +70,11 @@ export default function Conversation() {
     }
   }
 
-  const fetchSmartReplies = async (text, imageBase64 = null) => {
+  const fetchSmartReplies = async (text) => {
     setIsLoadingReplies(true)
     setSmartReplies([])
     try {
-      let replies
-      if (imageBase64) {
-        replies = await generateSmartRepliesWithImage(text, userProfile, imageBase64)
-      } else {
-        replies = await generateSmartReplies(text, userProfile)
-      }
+      const replies = await generateSmartReplies(text, userProfile)
       setSmartReplies(replies)
     } catch (e) {
       console.error(e)
@@ -132,181 +110,6 @@ export default function Conversation() {
     if (!customInput.trim()) return
     sendReply(customInput)
     setCustomInput('')
-  }
-
-  // ─── Camera ───────────────────────────────────────────────────────────
-  const openCamera = async () => {
-    try {
-      const stream = await navigator.mediaDevices.getUserMedia({
-        video: { facingMode: 'environment', width: { ideal: 1280 }, height: { ideal: 720 } },
-      })
-      setCameraStream(stream)
-      setCapturedImage(null)
-      setCameraMode(true)
-    } catch (err) {
-      console.error('Camera error:', err)
-      alert('Camera not available. Please allow camera access.')
-    }
-  }
-
-  const stopCamera = () => {
-    if (cameraStream) {
-      cameraStream.getTracks().forEach(t => t.stop())
-      setCameraStream(null)
-    }
-  }
-
-  const capturePhoto = () => {
-    if (!videoRef.current || !canvasRef.current) return
-    const video = videoRef.current
-    const canvas = canvasRef.current
-    canvas.width = video.videoWidth
-    canvas.height = video.videoHeight
-    const ctx = canvas.getContext('2d')
-    ctx.drawImage(video, 0, 0)
-    const dataURL = canvas.toDataURL('image/jpeg', 0.8)
-    setCapturedImage(dataURL)
-    stopCamera()
-  }
-
-  const retakePhoto = async () => {
-    setCapturedImage(null)
-    setContextLabel('')
-    try {
-      const stream = await navigator.mediaDevices.getUserMedia({
-        video: { facingMode: 'environment' },
-      })
-      setCameraStream(stream)
-    } catch (err) {
-      console.error(err)
-    }
-  }
-
-  const analyzeAndApply = async () => {
-    if (!capturedImage) return
-    setIsAnalyzing(true)
-    setCameraMode(false)
-
-    // Strip base64 header for API
-    const base64Data = capturedImage.split(',')[1]
-
-    try {
-      const label = await detectContextLabel(base64Data)
-      setContextLabel(label)
-
-      // Generate replies using current transcript + image
-      await fetchSmartReplies(transcript || 'What do you think about this?', base64Data)
-    } catch (e) {
-      console.error(e)
-      setContextLabel('📷 Context')
-    } finally {
-      setIsAnalyzing(false)
-    }
-  }
-
-  const clearContext = () => {
-    setCapturedImage(null)
-    setContextLabel('')
-    setSmartReplies([])
-  }
-
-  const closeCameraMode = () => {
-    stopCamera()
-    setCameraMode(false)
-    setCapturedImage(null)
-  }
-
-  // ─── Camera Overlay UI ────────────────────────────────────────────────
-  if (cameraMode) {
-    return (
-      <div className="min-h-screen flex flex-col relative overflow-hidden bg-black">
-        {/* Header */}
-        <div className="flex items-center justify-between px-4 py-3 border-b border-white/10 sticky top-0 z-10"
-          style={{ background: 'rgba(0,0,0,0.7)', backdropFilter: 'blur(12px)' }}>
-          <button onClick={closeCameraMode} className="text-white/70 text-sm px-3 py-1.5 rounded-xl"
-            style={{ background: 'rgba(255,255,255,0.1)', border: '0.5px solid rgba(255,255,255,0.2)' }}>
-            ✕ Cancel
-          </button>
-          <span className="font-bold text-white text-base">📷 Context Camera</span>
-          <div className="w-20" />
-        </div>
-
-        {/* Context tip */}
-        <div className="px-4 py-2 text-center" style={{ background: 'rgba(13,148,136,0.15)' }}>
-          <p className="text-xs text-teal-300 font-medium">
-            Point at a menu, whiteboard, sign, or product → Gemma 4 will read it and suggest perfect replies
-          </p>
-        </div>
-
-        {/* Viewfinder or Preview */}
-        <div className="flex-1 relative flex items-center justify-center">
-          {!capturedImage ? (
-            <>
-              <video
-                ref={videoRef}
-                autoPlay
-                playsInline
-                muted
-                className="w-full h-full object-cover"
-                style={{ maxHeight: 'calc(100vh - 220px)' }}
-              />
-              {/* Corner guides */}
-              <div className="absolute inset-8 pointer-events-none"
-                style={{ border: '2px solid rgba(13,148,136,0.6)', borderRadius: '16px',
-                  boxShadow: '0 0 0 9999px rgba(0,0,0,0.35)' }} />
-              <div className="absolute bottom-6 left-1/2 -translate-x-1/2">
-                <p className="text-white/50 text-xs text-center">Frame your context</p>
-              </div>
-            </>
-          ) : (
-            <img src={capturedImage} alt="Captured"
-              className="w-full object-cover" style={{ maxHeight: 'calc(100vh - 220px)' }} />
-          )}
-        </div>
-
-        {/* Controls */}
-        <div className="px-6 pb-10 pt-4 flex flex-col gap-3"
-          style={{ background: 'rgba(0,0,0,0.75)', backdropFilter: 'blur(12px)' }}>
-          {!capturedImage ? (
-            <button
-              onClick={capturePhoto}
-              className="mx-auto w-20 h-20 rounded-full flex items-center justify-center active:scale-95 transition-all"
-              style={{
-                background: 'rgba(13,148,136,0.9)',
-                border: '4px solid rgba(255,255,255,0.3)',
-                boxShadow: '0 0 32px rgba(13,148,136,0.5)',
-              }}
-            >
-              <span style={{ fontSize: '32px' }}>📷</span>
-            </button>
-          ) : (
-            <div className="flex flex-col gap-3">
-              <button
-                onClick={analyzeAndApply}
-                className="w-full py-4 rounded-2xl font-bold text-white text-base active:opacity-80 transition-all"
-                style={{
-                  background: 'rgba(13,148,136,0.9)',
-                  border: '0.5px solid rgba(255,255,255,0.3)',
-                  boxShadow: '0 4px 20px rgba(13,148,136,0.4)',
-                }}
-              >
-                ✨ Analyze with Gemma 4
-              </button>
-              <button
-                onClick={retakePhoto}
-                className="w-full py-3 rounded-2xl text-white/70 text-sm font-medium"
-                style={{ background: 'rgba(255,255,255,0.1)', border: '0.5px solid rgba(255,255,255,0.2)' }}
-              >
-                🔄 Retake
-              </button>
-            </div>
-          )}
-        </div>
-
-        {/* Hidden canvas for capture */}
-        <canvas ref={canvasRef} className="hidden" />
-      </div>
-    )
   }
 
   // ─── Main Conversation UI ─────────────────────────────────────────────
@@ -384,67 +187,13 @@ export default function Conversation() {
         )}
       </div>
 
-      {/* ─── Context Camera Bar ─── */}
-      <div className="px-4 mt-3 relative z-10">
-        {/* Active context indicator */}
-        {capturedImage && contextLabel && (
-          <div className="flex items-center gap-3 mb-2 p-3 rounded-2xl"
-            style={{
-              background: 'rgba(13,148,136,0.08)',
-              border: '1px solid rgba(13,148,136,0.25)',
-              backdropFilter: 'blur(10px)',
-              WebkitBackdropFilter: 'blur(10px)',
-            }}>
-            {/* Thumbnail */}
-            <img src={capturedImage} alt="context"
-              className="w-12 h-12 rounded-xl object-cover flex-shrink-0"
-              style={{ border: '1.5px solid rgba(13,148,136,0.3)' }} />
-            <div className="flex-1 min-w-0">
-              <p className="text-xs font-semibold text-teal-700">Context active</p>
-              <p className="text-sm text-stone-700 font-medium truncate">{contextLabel}</p>
-            </div>
-            <button onClick={clearContext}
-              className="text-stone-400 text-xs px-2 py-1 rounded-lg glass-btn flex-shrink-0">
-              ✕ Clear
-            </button>
-          </div>
-        )}
-
-        {/* Analyzing spinner */}
-        {isAnalyzing && (
-          <div className="flex items-center gap-3 mb-2 p-3 rounded-2xl glass-teal">
-            <div className="w-5 h-5 border-2 border-teal-500 border-t-transparent rounded-full animate-spin flex-shrink-0" />
-            <p className="text-sm text-teal-700 font-medium">Gemma 4 is analyzing your image...</p>
-          </div>
-        )}
-
-        {/* Camera button */}
-        {!capturedImage && !isAnalyzing && (
-          <button
-            onClick={openCamera}
-            className="w-full py-3 rounded-2xl flex items-center justify-center gap-2 font-semibold text-sm transition-all active:scale-[0.98]"
-            style={{
-              background: 'rgba(255,255,255,0.5)',
-              backdropFilter: 'blur(10px)',
-              WebkitBackdropFilter: 'blur(10px)',
-              border: '1px dashed rgba(13,148,136,0.4)',
-              color: '#0d9488',
-            }}
-          >
-            <span style={{ fontSize: '18px' }}>📷</span>
-            <span>Context Camera</span>
-            <span className="text-xs font-normal opacity-60">Point at menu, sign, or whiteboard</span>
-          </button>
-        )}
-      </div>
-
       {/* Smart Replies */}
       <div className="px-4 mt-3 flex-1 relative z-10">
         <p className="text-xs text-stone-400 mb-2 flex items-center gap-1">
           {isLoadingReplies
-            ? <><span className="inline-block w-3 h-3 border border-teal-400 border-t-transparent rounded-full animate-spin" /> {capturedImage ? '✨ Gemma 4 reading your image...' : '✨ Gemma 4 is analyzing...'}</>
+            ? <><span className="inline-block w-3 h-3 border border-teal-400 border-t-transparent rounded-full animate-spin" /> ✨ Gemma 4 is analyzing...</>
             : smartReplies.length > 0
-              ? <>{capturedImage ? `📷 Replies based on ${contextLabel || 'context'}:` : 'Choose a reply:'}</>
+              ? <>Choose a reply:</>
               : 'Smart replies will appear automatically...'
           }
         </p>
