@@ -1,5 +1,31 @@
-const OLLAMA_BASE_URL = 'http://localhost:11434'
-const MODEL = 'gemma3:4b'
+const GOOGLE_AI_BASE_URL = 'https://generativelanguage.googleapis.com/v1beta/models'
+const MODEL = 'gemma-2.0-flash'
+
+const getApiKey = () => import.meta.env.VITE_GOOGLE_AI_KEY
+
+const callGemini = async (prompt, imageBase64 = null) => {
+  const apiKey = getApiKey()
+  const parts = []
+
+  if (imageBase64) {
+    parts.push({ inlineData: { mimeType: 'image/jpeg', data: imageBase64 } })
+  }
+  parts.push({ text: prompt })
+
+  const response = await fetch(
+    `${GOOGLE_AI_BASE_URL}/${MODEL}:generateContent?key=${apiKey}`,
+    {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        contents: [{ parts }],
+      }),
+    }
+  )
+
+  const data = await response.json()
+  return data.candidates?.[0]?.content?.parts?.[0]?.text ?? ''
+}
 
 export async function generateSmartReplies(transcription, userProfile) {
   const prompt = `You are an AAC (Augmentative and Alternative Communication) assistant helping a speech-impaired person communicate naturally in conversation.
@@ -16,32 +42,15 @@ Replies should be conversational, brief (max 8 words each), and feel human — n
 Respond ONLY with a JSON array of strings, nothing else.
 Example: ["Oh really? That's wild!", "Yeah, totally agree!", "Hmm, tell me more", "Haha no way!"]`
 
-  const response = await fetch(`${OLLAMA_BASE_URL}/api/generate`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({
-      model: MODEL,
-      prompt,
-      stream: false,
-    })
-  })
-
-  const data = await response.json()
-
   try {
-    const cleaned = data.response.replace(/```json|```/g, '').trim()
+    const raw = await callGemini(prompt)
+    const cleaned = raw.replace(/```json|```/g, '').trim()
     return JSON.parse(cleaned)
   } catch {
     return ["Yes!", "No thanks", "Tell me more", "Interesting!"]
   }
 }
 
-/**
- * Generate smart replies using both speech transcript AND an image (Gemma 4 multimodal).
- * @param {string} transcription - What the conversation partner said
- * @param {object} userProfile - User's tone/style profile
- * @param {string} imageBase64 - Base64-encoded JPEG image (no data URL prefix)
- */
 export async function generateSmartRepliesWithImage(transcription, userProfile, imageBase64) {
   const prompt = `You are an AAC (Augmentative and Alternative Communication) assistant helping a speech-impaired person communicate naturally.
 
@@ -68,21 +77,9 @@ Replies must:
 Respond ONLY with a JSON array of 4 strings, nothing else.
 Example: ["I'll have the pasta!", "That looks delicious", "What do you recommend?", "Is it spicy?"]`
 
-  const response = await fetch(`${OLLAMA_BASE_URL}/api/generate`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({
-      model: MODEL,
-      prompt,
-      images: [imageBase64],
-      stream: false,
-    })
-  })
-
-  const data = await response.json()
-
   try {
-    const cleaned = data.response.replace(/```json|```/g, '').trim()
+    const raw = await callGemini(prompt, imageBase64)
+    const cleaned = raw.replace(/```json|```/g, '').trim()
     return JSON.parse(cleaned)
   } catch {
     return ["Looks interesting!", "Tell me more", "I like it!", "What's this about?"]
@@ -103,22 +100,21 @@ Respond ONLY with a JSON object:
   "style": "brief description of communication style"
 }`
 
-  const response = await fetch(`${OLLAMA_BASE_URL}/api/generate`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({
-      model: MODEL,
-      prompt,
-      stream: false,
-    })
-  })
-
-  const data = await response.json()
-
   try {
-    const cleaned = data.response.replace(/```json|```/g, '').trim()
+    const raw = await callGemini(prompt)
+    const cleaned = raw.replace(/```json|```/g, '').trim()
     return JSON.parse(cleaned)
   } catch {
     return { tone: 'casual', phrases: [], language: 'English', style: 'friendly' }
+  }
+}
+
+export async function detectContextLabel(imageBase64) {
+  try {
+    const prompt = 'What is in this image? Reply with ONLY 1-3 words and a fitting emoji. Example: "Menu 🍜" or "Whiteboard 📋" or "Product 🛍️"'
+    const raw = await callGemini(prompt, imageBase64)
+    return raw?.trim().slice(0, 30) || '📷 Context'
+  } catch {
+    return '📷 Context'
   }
 }

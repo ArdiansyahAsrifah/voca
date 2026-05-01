@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { generateSmartReplies, generateSmartRepliesWithImage } from '../services/ollama'
+import { generateSmartReplies, generateSmartRepliesWithImage, detectContextLabel } from '../services/ollama'
 import { createSpeechRecognition } from '../services/speechToText'
 
 export default function Conversation() {
@@ -187,11 +187,10 @@ export default function Conversation() {
     setIsAnalyzing(true)
     setCameraMode(false)
 
-    // Strip base64 header for Ollama
+    // Strip base64 header for API
     const base64Data = capturedImage.split(',')[1]
 
     try {
-      // Detect context label from image (quick heuristic via model)
       const label = await detectContextLabel(base64Data)
       setContextLabel(label)
 
@@ -202,26 +201,6 @@ export default function Conversation() {
       setContextLabel('📷 Context')
     } finally {
       setIsAnalyzing(false)
-    }
-  }
-
-  const detectContextLabel = async (base64Data) => {
-    // Ask Gemma to guess context in 2 words
-    try {
-      const res = await fetch('http://localhost:11434/api/generate', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          model: 'gemma3:4b',
-          prompt: 'What is in this image? Reply with ONLY 1-3 words and a fitting emoji. Example: "Menu 🍜" or "Whiteboard 📋" or "Product 🛍️"',
-          images: [base64Data],
-          stream: false,
-        }),
-      })
-      const data = await res.json()
-      return data.response?.trim().slice(0, 30) || '📷 Context'
-    } catch {
-      return '📷 Context'
     }
   }
 
