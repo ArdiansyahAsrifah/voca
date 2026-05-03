@@ -18,11 +18,6 @@ const FEATURES = [
     title: 'Speaks For You',
     description: 'Tap any reply and VOCA reads it out loud clearly — so your conversation partner hears you, naturally.',
   },
-  {
-    emoji: '📴',
-    title: 'Works Offline',
-    description: 'Powered by Gemma 4 running locally on your device. No internet needed — works anywhere, anytime.',
-  },
 ]
 
 const TONES = [
