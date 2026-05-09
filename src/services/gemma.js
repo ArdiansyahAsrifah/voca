@@ -1,26 +1,19 @@
 const GOOGLE_AI_BASE_URL = 'https://generativelanguage.googleapis.com/v1beta/models'
-
 const MODEL = 'gemma-4-26b-a4b-it'
-
 const getApiKey = () => import.meta.env.VITE_GOOGLE_AI_KEY
 
 const extractJSON = (raw) => {
   if (!raw) throw new Error('Empty response')
-
   const cleaned = raw.replace(/```(?:json)?\s*/gi, '').replace(/```/g, '').trim()
-
   try { return JSON.parse(cleaned) } catch (_) {}
-
   const arrMatch = cleaned.match(/\[[\s\S]*?\]/)
   if (arrMatch) { try { return JSON.parse(arrMatch[0]) } catch (_) {} }
-
   const objMatch = cleaned.match(/\{[\s\S]*?\}/)
   if (objMatch) { try { return JSON.parse(objMatch[0]) } catch (_) {} }
-
   throw new Error(`Could not extract JSON from: ${raw.slice(0, 100)}`)
 }
 
-const callGemma = async ({ system, turns, imageBase64 = null }) => {
+const callGemma = async ({ system, turns, imageBase64 = null, jsonMode = false }) => {
   const apiKey = getApiKey()
   if (!apiKey) throw new Error('VITE_GOOGLE_AI_KEY is not set.')
 
@@ -37,9 +30,10 @@ const callGemma = async ({ system, turns, imageBase64 = null }) => {
     systemInstruction: { parts: [{ text: system }] },
     contents,
     generationConfig: {
-      temperature: 0.5,   
-      topP: 0.9,
-      maxOutputTokens: 150, 
+      temperature: 0.3,
+      topP: 0.7,
+      maxOutputTokens: 80,
+      ...(jsonMode && { responseMimeType: 'application/json' }),
     },
   }
 
@@ -53,7 +47,6 @@ const callGemma = async ({ system, turns, imageBase64 = null }) => {
   )
 
   const data = await response.json()
-
   if (!response.ok) {
     console.error('Gemma API error:', data)
     throw new Error(data.error?.message || `API failed: ${response.status}`)
@@ -65,11 +58,11 @@ const callGemma = async ({ system, turns, imageBase64 = null }) => {
 export async function generateSmartReplies(transcription, userProfile) {
   try {
     const raw = await callGemma({
-      system: `You are an AAC reply generator. You ONLY output valid JSON arrays of 4 short strings. Never output anything else.`,
-
+      system: `You are an AAC reply generator. Output ONLY a JSON array of 4 short strings, max 6 words each.`,
       turns: [
-        { role: 'user', text: `Tone: ${userProfile.tone || 'casual'}. They said: "${transcription}". Reply with a JSON array of 4 short reply options:` },
+        { role: 'user', text: `Tone: ${userProfile.tone || 'casual'}. They said: "${transcription}". JSON array:` },
       ],
+      jsonMode: true,
     })
 
     const parsed = extractJSON(raw)
@@ -84,14 +77,12 @@ export async function generateSmartReplies(transcription, userProfile) {
 export async function generateSmartRepliesWithImage(transcription, userProfile, imageBase64) {
   try {
     const raw = await callGemma({
-      system: `You are an AAC reply generator. You ONLY output valid JSON arrays of 4 short strings. Never output anything else.`,
-
+      system: `You are an AAC reply generator. Output ONLY a JSON array of 4 short strings, max 6 words each.`,
       turns: [
-        { role: 'user',  text: `Tone: friendly. They said: "What do you want to eat?" Image: restaurant menu → JSON array:` },
-        { role: 'model', text: `["I'll have the pasta!", "What's popular here?", "Looks delicious", "Surprise me!"]` },
-        { role: 'user',  text: `Tone: ${userProfile.tone || 'casual'}. They said: "${transcription || 'What do you think?'}" Look at the image → JSON array:` },
+        { role: 'user', text: `Tone: ${userProfile.tone || 'casual'}. They said: "${transcription || 'What do you think?'}". Look at the image. JSON array:` },
       ],
       imageBase64,
+      jsonMode: true,
     })
 
     const parsed = extractJSON(raw)
@@ -108,8 +99,9 @@ export async function buildVoiceProfile(conversations) {
     const raw = await callGemma({
       system: `You analyze text and output ONLY a valid JSON object. Never output anything else.`,
       turns: [
-        { role: 'user',  text: `Analyze style:\n${conversations.map((c, i) => `${i + 1}. "${c}"`).join('\n')}\n→ JSON object with keys: tone, phrases (array), language, style:` },
+        { role: 'user', text: `Analyze style:\n${conversations.map((c, i) => `${i + 1}. "${c}"`).join('\n')}\n→ JSON object with keys: tone, phrases (array), language, style:` },
       ],
+      jsonMode: true,
     })
     return extractJSON(raw)
   } catch (e) {
@@ -123,7 +115,7 @@ export async function detectContextLabel(imageBase64) {
     const raw = await callGemma({
       system: `You describe images in 1-3 words + emoji only. Never output anything else.`,
       turns: [
-        { role: 'user',  text: 'What is in this image? 1-3 words + emoji only:' },
+        { role: 'user', text: 'What is in this image? 1-3 words + emoji only:' },
       ],
       imageBase64,
     })
