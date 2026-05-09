@@ -1,6 +1,6 @@
 const GOOGLE_AI_BASE_URL = 'https://generativelanguage.googleapis.com/v1beta/models'
 
-const MODEL = 'gemma-4-e4b-it'
+const MODEL = 'gemma-4-e2b-it'
 
 const getApiKey = () => import.meta.env.VITE_GOOGLE_AI_KEY
 
