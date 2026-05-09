@@ -1,13 +1,9 @@
-// src/services/gemma.js
-
 const GOOGLE_AI_BASE_URL = 'https://generativelanguage.googleapis.com/v1beta/models'
 
-// gemma-4-26b-a4b-it = MoE model, much faster than 31b, near-same quality
-const MODEL = 'gemma-4-26b-a4b-it'
+const MODEL = 'gemma-4-e4b-it'
 
 const getApiKey = () => import.meta.env.VITE_GOOGLE_AI_KEY
 
-// ─── Robust JSON extractor ────────────────────────────────────────────────────
 const extractJSON = (raw) => {
   if (!raw) throw new Error('Empty response')
 
@@ -24,16 +20,12 @@ const extractJSON = (raw) => {
   throw new Error(`Could not extract JSON from: ${raw.slice(0, 100)}`)
 }
 
-// ─── Core API call ────────────────────────────────────────────────────────────
 const callGemma = async ({ system, turns, imageBase64 = null }) => {
   const apiKey = getApiKey()
   if (!apiKey) throw new Error('VITE_GOOGLE_AI_KEY is not set.')
 
-  // Build multi-turn contents for few-shot prompting
-  // turns = [{ role: 'user'|'model', text: '...' }, ...]
   const contents = turns.map((t, i) => {
     const parts = []
-    // Attach image only to the last user turn
     if (imageBase64 && t.role === 'user' && i === turns.length - 1) {
       parts.push({ inlineData: { mimeType: 'image/jpeg', data: imageBase64 } })
     }
@@ -45,9 +37,9 @@ const callGemma = async ({ system, turns, imageBase64 = null }) => {
     systemInstruction: { parts: [{ text: system }] },
     contents,
     generationConfig: {
-      temperature: 0.5,   // lower = more predictable JSON output
+      temperature: 0.5,   
       topP: 0.9,
-      maxOutputTokens: 150, // replies are short, no need for more
+      maxOutputTokens: 150, 
     },
   }
 
@@ -70,14 +62,11 @@ const callGemma = async ({ system, turns, imageBase64 = null }) => {
   return data.candidates?.[0]?.content?.parts?.[0]?.text ?? ''
 }
 
-// ─── Public Functions ─────────────────────────────────────────────────────────
-
 export async function generateSmartReplies(transcription, userProfile) {
   try {
     const raw = await callGemma({
       system: `You are an AAC reply generator. You ONLY output valid JSON arrays of 4 short strings. Never output anything else.`,
 
-      // Few-shot examples teach the model the exact format expected
       turns: [
         { role: 'user',  text: `Tone: friendly. They said: "How are you doing today?" → JSON array:` },
         { role: 'model', text: `["I'm great thanks!", "Pretty good!", "Tired today", "Could be better"]` },

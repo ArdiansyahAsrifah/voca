@@ -4,7 +4,6 @@ import Conversation from './pages/Conversation'
 import Profile from './pages/Profile'
 import Emergency from './pages/Emergency'
 
-// Cek apakah user sudah pernah onboarding
 function RootRedirect() {
   const hasProfile = localStorage.getItem('vocaProfile')
   return <Navigate to={hasProfile ? '/conversation' : '/onboarding'} replace />

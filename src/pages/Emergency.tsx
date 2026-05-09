@@ -102,7 +102,6 @@ export default function Emergency() {
     window.speechSynthesis.speak(utterance)
   }
 
-  // SHOW MODE — fullscreen display for bystanders to read
   if (mode === 'show' && selectedPreset) {
     return (
       <div
@@ -137,14 +136,12 @@ export default function Emergency() {
     )
   }
 
-  // SPEAK MODE — confirmation + repeat
   if (mode === 'speak' && selectedPreset) {
     return (
       <div className="min-h-screen flex flex-col relative overflow-hidden">
         <div className="bg-blob-1" />
         <div className="bg-blob-2" />
 
-        {/* Header */}
         <div className="flex items-center justify-between px-4 py-3 glass border-b border-white/60 sticky top-0 z-10">
           <button onClick={handleDismiss} className="text-stone-500 text-sm px-3 py-1.5 rounded-xl glass-btn">
             ← Back
@@ -154,7 +151,6 @@ export default function Emergency() {
         </div>
 
         <div className="flex-1 flex flex-col items-center justify-center px-6 gap-8 relative z-10">
-          {/* Speaking indicator */}
           <div
             className="w-28 h-28 rounded-full flex items-center justify-center"
             style={{
@@ -169,7 +165,6 @@ export default function Emergency() {
             </span>
           </div>
 
-          {/* Message */}
           <div className="glass rounded-2xl p-5 w-full text-center">
             <p className="text-xs font-semibold uppercase tracking-widest mb-3"
               style={{ color: activeCategory === 'medical' ? '#dc2626' : '#ea580c' }}>
@@ -180,7 +175,6 @@ export default function Emergency() {
             </p>
           </div>
 
-          {/* Actions */}
           <div className="w-full flex flex-col gap-3">
             <button
               onClick={repeatSpeak}
@@ -214,13 +208,11 @@ export default function Emergency() {
     )
   }
 
-  // MAIN EMERGENCY PAGE
   return (
     <div className="min-h-screen flex flex-col relative overflow-hidden">
       <div className="bg-blob-1" />
       <div className="bg-blob-2" />
 
-      {/* Header */}
       <div className="flex items-center justify-between px-4 py-3 glass border-b border-white/60 sticky top-0 z-10">
         <button
           onClick={() => navigate('/conversation')}
@@ -241,7 +233,6 @@ export default function Emergency() {
         </div>
       </div>
 
-      {/* Category tabs */}
       <div className="px-4 pt-4 flex gap-2 relative z-10">
         {EMERGENCY_CATEGORIES.map(cat => (
           <button
@@ -267,7 +258,6 @@ export default function Emergency() {
         ))}
       </div>
 
-      {/* Preset grid */}
       <div className="px-4 mt-4 flex-1 relative z-10">
         <p className="text-xs text-stone-400 mb-3 font-medium">
           {selectedPreset ? 'Tap again to deselect · Choose action below' : 'Tap a message to send'}
@@ -297,7 +287,6 @@ export default function Emergency() {
         </div>
       </div>
 
-      {/* Action buttons — sticky bottom, appears when preset selected */}
       <div className="px-4 pb-8 pt-4 relative z-10">
         {selectedPreset ? (
           <div className="flex flex-col gap-2">

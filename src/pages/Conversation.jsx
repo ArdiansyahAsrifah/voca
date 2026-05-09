@@ -112,14 +112,12 @@ export default function Conversation() {
     setCustomInput('')
   }
 
-  // ─── Main Conversation UI ─────────────────────────────────────────────
   return (
     <div className="min-h-screen flex flex-col relative overflow-hidden">
 
       <div className="bg-blob-1" />
       <div className="bg-blob-2" />
 
-      {/* Header */}
       <div className="flex items-center justify-between px-4 py-3 glass border-b border-white/60 sticky top-0 z-10">
         <button
           onClick={() => navigate('/profile')}
@@ -140,7 +138,6 @@ export default function Conversation() {
         </div>
       </div>
 
-      {/* Emergency Button */}
       <div className="px-4 pt-4 relative z-10">
         <button
           onClick={() => navigate('/emergency')}
@@ -159,7 +156,6 @@ export default function Conversation() {
         </button>
       </div>
 
-      {/* Sent Message */}
       <div className={`mx-4 mt-3 p-5 rounded-2xl text-center transition-all duration-300 ${
         sentMessage ? 'glass-sent' : 'glass opacity-50'
       }`}>
@@ -171,7 +167,6 @@ export default function Conversation() {
         )}
       </div>
 
-      {/* Transcription */}
       <div className="mx-4 mt-3 p-4 glass rounded-2xl min-h-[90px]">
         <p className="text-xs text-teal-600/70 font-semibold uppercase tracking-widest mb-2">
           Conversation partner
@@ -187,7 +182,6 @@ export default function Conversation() {
         )}
       </div>
 
-      {/* Smart Replies */}
       <div className="px-4 mt-3 flex-1 relative z-10">
         <p className="text-xs text-stone-400 mb-2 flex items-center gap-1">
           {isLoadingReplies
@@ -215,7 +209,6 @@ export default function Conversation() {
         </div>
       </div>
 
-      {/* Custom Input */}
       <div className="px-4 pb-8 pt-3 flex gap-2 relative z-10">
         <input
           type="text"

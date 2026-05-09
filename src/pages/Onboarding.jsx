@@ -1,7 +1,6 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 
-// --- DATA ---
 const FEATURES = [
   {
     emoji: '🎤',
@@ -47,14 +46,12 @@ const TOPICS = [
   { id: 'movies', label: '🎬 Movies' },
 ]
 
-// Total steps: 4 feature slides + 3 profile steps + 1 done = 8
 const TOTAL_STEPS = 8
 
 export default function Onboarding() {
   const navigate = useNavigate()
-  const [step, setStep] = useState(0) // 0-3 = features, 4 = tone, 5 = style, 6 = topics, 7 = done
+  const [step, setStep] = useState(0) 
 
-  // Profile state
   const [selectedTone, setSelectedTone] = useState(null)
   const [selectedStyle, setSelectedStyle] = useState(null)
   const [selectedTopics, setSelectedTopics] = useState([])
@@ -88,11 +85,9 @@ export default function Onboarding() {
   return (
     <div className="min-h-screen flex flex-col relative overflow-hidden">
 
-      {/* Background blobs */}
       <div className="bg-blob-1" />
       <div className="bg-blob-2" />
 
-      {/* Header */}
       <div className="flex items-center justify-between px-4 py-3 glass border-b border-white/60 sticky top-0 z-10">
         <span className="font-bold text-teal-600 text-lg tracking-wide">VOCA</span>
         <button
@@ -108,7 +103,6 @@ export default function Onboarding() {
         </button>
       </div>
 
-      {/* Progress bar */}
       <div className="h-1 bg-white/30 backdrop-blur-sm">
         <div
           className="h-1 bg-teal-500/70 backdrop-blur-sm transition-all duration-500"
@@ -116,10 +110,8 @@ export default function Onboarding() {
         />
       </div>
 
-      {/* Content */}
       <div className="flex-1 flex flex-col px-4 py-6 relative z-10">
 
-        {/* === FEATURE SLIDES (step 0–3) === */}
         {step <= 3 && (
           <div className="flex-1 flex flex-col items-center justify-center text-center gap-6">
             {step === 0 && (
@@ -150,7 +142,6 @@ export default function Onboarding() {
           </div>
         )}
 
-        {/* === TONE (step 4) === */}
         {step === 4 && (
           <div className="flex-1 flex flex-col gap-4">
             <div className="text-center mb-2">
@@ -179,7 +170,6 @@ export default function Onboarding() {
           </div>
         )}
 
-        {/* === STYLE (step 5) === */}
         {step === 5 && (
           <div className="flex-1 flex flex-col gap-4">
             <div className="text-center mb-2">
@@ -208,7 +198,6 @@ export default function Onboarding() {
           </div>
         )}
 
-        {/* === TOPICS (step 6) === */}
         {step === 6 && (
           <div className="flex-1 flex flex-col gap-4">
             <div className="text-center mb-2">
@@ -234,7 +223,6 @@ export default function Onboarding() {
           </div>
         )}
 
-        {/* === DONE (step 7) === */}
         {step === 7 && (
           <div className="flex-1 flex flex-col items-center justify-center text-center gap-5">
             <div className="w-24 h-24 rounded-3xl glass-teal flex items-center justify-center text-5xl">
@@ -271,7 +259,6 @@ export default function Onboarding() {
 
       </div>
 
-      {/* Bottom button */}
       <div className="px-4 pb-8 relative z-10">
         {step < 7 ? (
           <button
