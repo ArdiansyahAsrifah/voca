@@ -1,6 +1,6 @@
 const GOOGLE_AI_BASE_URL = 'https://generativelanguage.googleapis.com/v1beta/models'
 
-const MODEL = 'gemma-4-e2b-it'
+const MODEL = 'gemma-4-27b-it'
 
 const getApiKey = () => import.meta.env.VITE_GOOGLE_AI_KEY
 
@@ -68,9 +68,7 @@ export async function generateSmartReplies(transcription, userProfile) {
       system: `You are an AAC reply generator. You ONLY output valid JSON arrays of 4 short strings. Never output anything else.`,
 
       turns: [
-        { role: 'user',  text: `Tone: friendly. They said: "How are you doing today?" → JSON array:` },
-        { role: 'model', text: `["I'm great thanks!", "Pretty good!", "Tired today", "Could be better"]` },
-        { role: 'user',  text: `Tone: ${userProfile.tone || 'casual'}. They said: "${transcription}" → JSON array:` },
+        { role: 'user', text: `Tone: ${userProfile.tone || 'casual'}. They said: "${transcription}". Reply with a JSON array of 4 short reply options:` },
       ],
     })
 
