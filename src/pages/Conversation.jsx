@@ -50,7 +50,6 @@ export default function Conversation() {
     return () => clearInterval(interval)
   }, [isLoadingReplies])
 
-  // ─── Speech ───────────────────────────────────────────────────────────
   const startListening = () => {
     if (!shouldListenRef.current) return
     if (isListeningRef.current) return
