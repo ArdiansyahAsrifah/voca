@@ -3,6 +3,13 @@ import { useNavigate } from 'react-router-dom'
 import { generateSmartReplies } from '../services/gemma'
 import { createSpeechRecognition } from '../services/speechToText'
 
+const LOADING_MESSAGES = [
+  '✨ Reading the conversation...',
+  '🧠 Gemma 4 is thinking...',
+  '💬 Crafting your replies...',
+  '⚡ Almost ready...',
+]
+
 export default function Conversation() {
   const navigate = useNavigate()
   const [transcript, setTranscript] = useState('')
@@ -13,6 +20,7 @@ export default function Conversation() {
   const [isLoadingReplies, setIsLoadingReplies] = useState(false)
   const [customInput, setCustomInput] = useState('')
   const [isSpeaking, setIsSpeaking] = useState(false)
+  const [loadingDot, setLoadingDot] = useState(0)
 
   const recognitionRef = useRef(null)
   const isListeningRef = useRef(false)
@@ -32,6 +40,15 @@ export default function Conversation() {
       window.speechSynthesis.cancel()
     }
   }, [])
+
+  useEffect(() => {
+    if (!isLoadingReplies) return
+    setLoadingDot(0)
+    const interval = setInterval(() => {
+      setLoadingDot(d => (d + 1) % LOADING_MESSAGES.length)
+    }, 1800)
+    return () => clearInterval(interval)
+  }, [isLoadingReplies])
 
   // ─── Speech ───────────────────────────────────────────────────────────
   const startListening = () => {
@@ -183,18 +200,35 @@ export default function Conversation() {
       </div>
 
       <div className="px-4 mt-3 flex-1 relative z-10">
-        <p className="text-xs text-stone-400 mb-2 flex items-center gap-1">
+        <p className="text-xs text-stone-400 mb-2 flex items-center gap-1 min-h-[16px] transition-all duration-500">
           {isLoadingReplies
-            ? <><span className="inline-block w-3 h-3 border border-teal-400 border-t-transparent rounded-full animate-spin" /> ✨ Gemma 4 is analyzing...</>
+            ? LOADING_MESSAGES[loadingDot]
             : smartReplies.length > 0
-              ? <>Choose a reply:</>
+              ? 'Choose a reply:'
               : 'Smart replies will appear automatically...'
           }
         </p>
+
         <div className="grid grid-cols-2 gap-2">
           {isLoadingReplies
             ? Array(4).fill(0).map((_, i) => (
-                <div key={i} className="h-14 glass rounded-xl animate-pulse" />
+                <div
+                  key={i}
+                  className="h-14 rounded-xl overflow-hidden relative"
+                  style={{
+                    background: 'rgba(255,255,255,0.35)',
+                    border: '0.5px solid rgba(255,255,255,0.75)',
+                  }}
+                >
+                  <div
+                    className="absolute inset-0"
+                    style={{
+                      background: 'linear-gradient(90deg, transparent 0%, rgba(255,255,255,0.6) 50%, transparent 100%)',
+                      animation: `shimmer 1.6s infinite`,
+                      animationDelay: `${i * 0.2}s`,
+                    }}
+                  />
+                </div>
               ))
             : smartReplies.map((reply, i) => (
                 <button
